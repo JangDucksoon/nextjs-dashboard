@@ -17,16 +17,28 @@ export type State = {
 }
 
 const FormSchema = z.object({
-    id: z.string(),
-    customerId: z.string({
-        invalid_type_error: 'Please select a customer.'
-    }),
-    amount: z.coerce.number().gt(0, {message: 'Please enter an amount greater than $0.'}),
-    status: z.enum(['pending', 'paid'], {
-        invalid_type_error: 'Please select an invoice status.'
-    }),
-    date: z.string()
+	id: z.string(),
+	customerId: z.string({
+		invalid_type_error: 'Please select a customer.',
+	}),
+	amount: z.preprocess(
+		(val) => {
+			if (val === '') return undefined;
+			return val;
+		},
+		z.coerce.number({
+			invalid_type_error: 'Please enter an amount.',
+		})
+        .gt(0, {
+			message: 'Please enter an amount greater than $0.',
+		})
+	),
+	status: z.enum(['pending', 'paid'], {
+		invalid_type_error: 'Please select an invoice status.',
+	}),
+	date: z.string()
 });
+
 
 const CreateInvoice = FormSchema.omit({id: true, date: true});
 
@@ -36,8 +48,6 @@ export async function createInvoice(prevState: State, formData: FormData) {
         amount: formData.get('amount'),
         status: formData.get('status'),
     });
-
-    console.log(validatedFields);
 
     if (!validatedFields.success) {
         return {
@@ -72,6 +82,8 @@ export async function updateInvoice(id: string, prevState:State, formData: FormD
         amount: formData.get('amount'),
         status: formData.get('status'),
     });
+
+    console.log(JSON.stringify(validatedFields));
 
      if (!validatedFields.success) {
          return {
